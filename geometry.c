@@ -15,7 +15,7 @@ enum Errors {
     ER_EXP_COMMA,
 };
 
-void print_error(int pos, int err)
+int print_error(int pos, int err)
 {
     pos += 1;
     switch (err) {
@@ -53,13 +53,15 @@ void print_error(int pos, int err)
                pos);
         break;
     }
+    return 1;
 }
 
-int parser(FILE* file)
+int parser(FILE* file, int flag)
 {
     char figure[size];
     int position = 0;
     char sym;
+    int er = 0;
     const char* mask = "circletrianglepolygon0123456789.,(){}";
     while ((sym = getc(file)) != EOF) {
         if (sym == 'q') {
@@ -67,33 +69,38 @@ int parser(FILE* file)
         }
         if (sym == '\n') {
             if (figure[0] == 'c') {
+                if (flag == 2) {
+                    puts(figure);
+                }
+                er = 0;
                 for (int i = 1; i < 14; i++) {
                     if (i < 6 && figure[i] != mask[i]) {
                         printf("\e[1;31mError\e[0m at column %d: "
                                "\e[1;31mexpected %c\e[0m\n",
                                i + 1,
                                mask[i]);
+                        er = 1;
                         break;
                     }
                     if (i == 6 && figure[i] != '(') {
-                        print_error(i, ER_NOT_BRACE_LEFT);
+                        er = print_error(i, ER_NOT_PARENTHESIS_LEFT);
                         break;
                     }
                     if (i > 6 && i < 13 && i != 9 && i != 11
                         && strchr("0123456789", figure[i]) == NULL) {
-                        print_error(i, ER_NOT_POINT);
+                        er = print_error(i, ER_NOT_POINT);
                         break;
                     }
                     if (i == 9 && figure[i] != ',') {
-                        print_error(i, ER_EXP_COMMA);
+                        er = print_error(i, ER_EXP_COMMA);
                         break;
                     }
                     if (i == 11 && figure[i] != '.') {
-                        print_error(i, ER_NOT_NUMBER);
+                        er = print_error(i, ER_NOT_NUMBER);
                         break;
                     }
                     if (i == 14 && figure[i] != ')') {
-                        print_error(i, ER_NOT_BRACE_RIGHT);
+                        er = print_error(i, ER_NOT_PARENTHESIS_RIGHT);
                         break;
                     }
                 }
@@ -110,6 +117,9 @@ int parser(FILE* file)
             }
             memset(&figure[0], 0, size);
             position = 0;
+            if (er == 0) {
+                printf("Inputed!\n");
+            }
         }
         if (strchr(mask, tolower(sym)) != 0) {
             figure[position] = tolower(sym);
@@ -123,14 +133,14 @@ int main(int argc, char* argv[])
 {
     FILE* file = NULL;
     if (argc < 2) {
-        parser(stdin);
+        parser(stdin, 1);
     } else if (argc == 2) {
         if ((file = fopen(argv[1], "r")) == NULL) {
             printf("\e[1;31mError\e[0m: can't open file \e[1;35m\"%s\"\e[0m\n",
                    argv[1]);
             return 1;
         } else {
-            parser(file);
+            parser(file, 2);
             fclose(file);
         }
     } else {
