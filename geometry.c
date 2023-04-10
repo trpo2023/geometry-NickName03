@@ -4,10 +4,14 @@
 #include <string.h>
 #define size 50
 
+struct Circle {
+    int id;
+    float x, y, radius, perimetr, square;
+};
+
 enum Errors {
-    ER_NAME,       // название
-    ER_NOT_POINT,  // вершина (центр у окружности)
-    ER_NOT_NUMBER, // радиус у окружности
+    ER_NAME,
+    ER_NOT_NUMBER,
     ER_NOT_PARENTHESIS_LEFT, // круглая скобка
     ER_NOT_PARENTHESIS_RIGHT,
     ER_NOT_BRACE_LEFT, //фигурная скобка
@@ -23,10 +27,6 @@ int print_error(int pos, int err)
     case ER_NAME:
         printf("\e[1;31mError\e[0m at column 1: \e[1;31mexpected 'circle' or "
                "'triangle' or 'poligon'\e[0m\n");
-        break;
-    case ER_NOT_POINT:
-        printf("\e[1;31mError\e[0m at column %d: \e[1;31mexpected Point\e[0m\n",
-               pos);
         break;
     case ER_NOT_NUMBER:
         printf("\e[1;31mError\e[0m at column %d: \e[1;31mexpected "
@@ -118,24 +118,13 @@ int check_circle(char* inputed_string)
     return 0;
 }
 
-/*int check_triangle(char* inputed_string)
-{
-    const char* mask = "triangle((,,,))";
-    return 0;
-}
-
-int check_poligon(char* inputed_string)
-{
-    const char* mask = "polygon((,,{,}))";
-    return 0;
-}*/
-
 void delete_space(char* inputed_string)
 {
     int pos = 0;
     while (inputed_string[pos] != '\0') {
         if ((inputed_string[pos] == ' ' && inputed_string[pos + 1] == ' ')
-            || (inputed_string[pos] == ' ' && inputed_string[pos - 1] == ' ')) {
+            || (inputed_string[pos] == ' ' && inputed_string[pos - 1] == ' ')
+            || (inputed_string[pos] == ' ' && inputed_string[pos - 1] == '(')) {
             for (int i = pos; i < strlen(inputed_string); i++) {
                 inputed_string[i] = inputed_string[i + 1];
             }
@@ -160,10 +149,49 @@ void str_to_lower(char* inputed_string)
     }
 }
 
+int check_number(char* number, int pos)
+{
+    int dot_flag = 0;
+    for (int i = 0; i < strlen(number); i++) {
+        if (number[i] == '.')
+            dot_flag++;
+        if (dot_flag > 1
+            || (isdigit(number[i]) == 0 && number[i] != '.'
+                && number[i] != ' ')) {
+            print_error(pos + i, ER_NOT_NUMBER);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int write_struct(struct Circle* circle, char* inputed_string)
+{
+    char* cont = NULL;
+    char* str_x = strtok_r(inputed_string, "(", &cont);
+    str_x = strtok_r(NULL, " ", &cont);
+    char* str_y = strtok_r(NULL, ",", &cont);
+    char* str_r = strtok_r(NULL, ")", &cont);
+    int pos = strlen(inputed_string) + 1;
+    if (check_number(str_x, pos) == 1)
+        return 1;
+    if (check_number(str_y, pos + strlen(str_x)) == 1)
+        return 1;
+    if (check_number(str_r, pos + strlen(str_x) + strlen(str_y) + 1) == 1)
+        return 1;
+    circle->x = atof(str_x);
+    circle->y = atof(str_y);
+    circle->radius = atof(str_r);
+    circle->perimetr = 2 * 3.1415 * circle->radius;
+    circle->square = 2 * 3.1415 * circle->radius * circle->radius;
+    return 0;
+}
+
 int parser(FILE* file)
 {
     char figure[size];
-    int result = 0;
+    struct Circle circle[size];
+    int counter_figure = 1;
     while (fgets(figure, size, file) != NULL && figure[0] != 'q') {
         str_to_lower(figure);
         puts(figure);
@@ -171,9 +199,16 @@ int parser(FILE* file)
             print_error(0, ER_NAME);
         }
         if (figure[0] == 'c') {
-            result = check_circle(figure);
-            if (result == 0)
-                printf("\nInputed!\n");
+            if (check_circle(figure) == 0) {
+                if (write_struct(&circle[counter_figure], figure) == 0) {
+                    printf("Inputed!\n");
+                    circle[counter_figure].id = counter_figure;
+                    printf("P = %f\nS = %f\n",
+                           circle[counter_figure].perimetr,
+                           circle[counter_figure].square);
+                    counter_figure++;
+                }
+            }
         }
         if (figure[0] == 't') {
             check_circle(figure);
