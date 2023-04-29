@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "informer.h"
-#include "lexer.h"
+#include <informer.h>
+#include <lexer.h>
 #define size 50
 
 enum Errors {
