@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "parser.h"
+#include <../libgeometry/parser.h>
 
 int main(int argc, char* argv[])
 {

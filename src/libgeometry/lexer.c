@@ -1,7 +1,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "informer.h"
+#include <informer.h>
 
 enum Errors {
     ER_NOT_NUMBER,
